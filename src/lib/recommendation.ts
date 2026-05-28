@@ -33,6 +33,17 @@ const avoidMap: Record<string, string[]> = {
   '饮食规律改善': ['高糖零食', '油炸快餐', '含糖饮料', '夜宵', '不规律进餐'],
 };
 
+const stateExcludeMap: Record<string, string[]> = {
+  '熬夜': ['辛辣', '油炸', '高糖', '咖啡因'],
+  '备考': ['高糖', '油炸', '高GI'],
+  '压力': ['高糖甜点', '油炸', '咖啡因', '辛辣'],
+  '运动训练': ['油炸', '高糖饮料', '酒精'],
+  '生理期': ['生冷', '辛辣', '寒性'],
+  '消化不良': ['油腻', '辛辣', '油炸', '生冷', '高纤维粗粮'],
+  '上火': ['辛辣', '油炸', '烧烤', '高油', '重口味'],
+  '感冒': ['生冷', '辛辣', '油炸', '冰凉'],
+};
+
 const dietFocusMap: Record<string, string[]> = {
   '健身增肌': ['保证每餐蛋白质摄入', '适量增加碳水补充', '运动后30分钟内补充营养'],
   '减脂控重': ['控制总热量摄入', '低GI主食替代精米白面', '增加蔬菜纤维摄入'],
@@ -100,6 +111,16 @@ function scoreDish(dish: Dish, profile: UserProfile): number {
     (g) => g !== '健身增肌'
   );
   if (shouldAvoidFried && dish.tags.includes('油炸')) score -= 5;
+
+  // State-specific exclusion (heavy penalty for incompatible body states)
+  for (const status of profile.recentStatus) {
+    const stateExcludes = stateExcludeMap[status] || [];
+    for (const excludeTag of stateExcludes) {
+      if (dish.tags.some((t) => t.includes(excludeTag) || excludeTag.includes(t))) {
+        score -= 8;
+      }
+    }
+  }
 
   return score;
 }
@@ -301,6 +322,24 @@ export function generateDietaryAdvice(profile: UserProfile): DietaryAdvice {
 
   if (profile.exerciseFrequency === 'sedentary' && profile.dietaryGoals.includes('减脂控重')) {
     riskWarnings.push('目前运动量偏少，建议配合适量运动以达到更好的减脂效果');
+  }
+
+  // State-specific risk warnings
+  const stateWarnings: Record<string, string> = {
+    '上火': '你当前有上火症状，已降低辛辣、油炸、烧烤类菜品推荐优先级',
+    '消化不良': '消化不适期间，已优先推荐温热、软烂、易消化的菜品',
+    '感冒': '感冒期间建议选择温热汤粥类，已过滤生冷、辛辣食物',
+    '熬夜': '熬夜后建议补充B族维生素和优质蛋白，避免油炸和高糖',
+    '备考': '高强度脑力活动期间，推荐稳定血糖的均衡饮食，避免高糖崩溃',
+    '生理期': '生理期已过滤生冷、辛辣食物，推荐温补易消化的菜品',
+    '运动训练': '运动训练期间，已增加优质蛋白和复合碳水的推荐比例',
+    '压力': '压力大时避免靠吃发泄情绪，已推荐含镁、维C的健康食材',
+  };
+
+  for (const status of profile.recentStatus) {
+    if (stateWarnings[status]) {
+      riskWarnings.push(stateWarnings[status]);
+    }
   }
 
   // Deduplicate

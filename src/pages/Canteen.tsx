@@ -7,6 +7,8 @@ import {
   Tag,
   AlertTriangle,
   ShoppingCart,
+  Shuffle,
+  Sparkles,
 } from 'lucide-react';
 
 const categoryLabels: Record<string, string> = {
@@ -26,8 +28,19 @@ const categoryColors: Record<string, string> = {
 export default function Canteen() {
   const navigate = useNavigate();
   const [advice, setAdvice] = useState<DietaryAdvice | null>(null);
-  const [viewMode, setViewMode] = useState<'plans' | 'all'>('plans');
+  const [viewMode, setViewMode] = useState<'plans' | 'all' | 'roulette'>('plans');
   const [filterCanteen, setFilterCanteen] = useState('all');
+  const [rouletteSpinning, setRouletteSpinning] = useState(false);
+  const [rouletteResult, setRouletteResult] = useState<MealPlanHint | null>(null);
+
+  interface MealPlanHint {
+    staple: Dish;
+    protein: Dish;
+    vegetable: Dish;
+    soup?: Dish;
+    total: number;
+    reason: string;
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem('smartcampusdiet-profile');
@@ -51,6 +64,52 @@ export default function Canteen() {
     ? canteenDishes
     : canteenDishes.filter((d) => d.canteen === filterCanteen);
 
+  // Roulette spin logic
+  const spinRoulette = () => {
+    if (rouletteSpinning) return;
+    setRouletteSpinning(true);
+    setRouletteResult(null);
+
+    // Simulate spinning delay then show random result
+    setTimeout(() => {
+      const proteinDishes = filteredDishes.filter((d) => d.category === 'protein');
+      const vegDishes = filteredDishes.filter((d) => d.category === 'vegetable');
+      const stapleDishes = filteredDishes.filter((d) => d.category === 'staple');
+      const soupDishes = filteredDishes.filter((d) => d.category === 'soup_drink');
+
+      const pick = (arr: Dish[]) => arr[Math.floor(Math.random() * arr.length)];
+      const protein = pick(proteinDishes.length > 0 ? proteinDishes : filteredDishes);
+      const veg = pick(vegDishes.length > 0 ? vegDishes : filteredDishes);
+      const staple = pick(stapleDishes.length > 0 ? stapleDishes : filteredDishes);
+      const soup = pick(soupDishes.length > 0 ? soupDishes : []);
+
+      const allPicked = [staple, protein, veg];
+      if (soup && soup.id !== protein.id && soup.id !== veg.id) allPicked.push(soup);
+
+      setRouletteResult({
+        staple,
+        protein,
+        vegetable: veg,
+        soup: soup && soup.id !== protein.id && soup.id !== veg.id ? soup : undefined,
+        total: allPicked.reduce((s, d) => s + d.price, 0),
+        reason: getRandomReason(),
+      });
+      setRouletteSpinning(false);
+    }, 1500);
+  };
+
+  const getRandomReason = (): string => {
+    const reasons = [
+      '今天试试这个搭配，营养均衡不发胖',
+      '随机搭配也有惊喜，这一套很适合你',
+      '让命运决定你的午餐吧！看起来不错',
+      '这个组合正好符合你的健康目标',
+      '偶尔换换口味，这搭配值得一试',
+      '食堂阿姨强烈推荐：好吃不贵还健康',
+    ];
+    return reasons[Math.floor(Math.random() * reasons.length)];
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,6 +129,17 @@ export default function Canteen() {
             }`}
           >
             推荐套餐
+          </button>
+          <button
+            onClick={() => setViewMode('roulette')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${
+              viewMode === 'roulette'
+                ? 'bg-primary-500 text-white shadow-md'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            今天吃啥
           </button>
           <button
             onClick={() => setViewMode('all')}
@@ -131,6 +201,94 @@ export default function Canteen() {
               ))}
             </div>
           </>
+        )}
+
+        {viewMode === 'roulette' && (
+          <div className="max-w-md mx-auto">
+            {/* Roulette Circle */}
+            <div className="text-center py-8">
+              <div
+                onClick={spinRoulette}
+                className={`w-64 h-64 rounded-full mx-auto flex items-center justify-center cursor-pointer transition-all duration-300 select-none ${
+                  rouletteSpinning
+                    ? 'bg-gradient-to-br from-primary-200 to-primary-400 shadow-2xl shadow-primary-300/50 scale-105 animate-pulse'
+                    : rouletteResult
+                    ? 'bg-gradient-to-br from-primary-100 to-primary-300 shadow-xl shadow-primary-300/40 border-4 border-primary-400'
+                    : 'bg-gradient-to-br from-gray-50 to-primary-50 shadow-lg hover:shadow-xl hover:scale-105'
+                }`}
+              >
+                <div className="text-center px-6">
+                  {rouletteSpinning ? (
+                    <>
+                      <Sparkles className="w-10 h-10 text-primary-600 mx-auto animate-spin mb-2" />
+                      <span className="text-lg font-bold text-primary-700">正在选择…</span>
+                    </>
+                  ) : rouletteResult ? (
+                    <>
+                      <span className="text-4xl mb-2 block">🍽️</span>
+                      <span className="text-lg font-bold text-primary-800 block">{rouletteResult.protein.name}</span>
+                      <span className="text-xs text-primary-600 mt-1">¥{rouletteResult.total.toFixed(1)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-5xl mb-3 block">🎲</span>
+                      <span className="text-lg font-bold text-gray-500">点我随机推荐</span>
+                      <span className="text-xs text-gray-400 mt-1 block">让命运决定今天吃啥</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={spinRoulette}
+                disabled={rouletteSpinning}
+                className="btn-primary mt-6 px-8 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {rouletteSpinning ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    正在选择…
+                  </span>
+                ) : rouletteResult ? (
+                  '🔄 再换一个'
+                ) : (
+                  '🎲 随机推荐'
+                )}
+              </button>
+            </div>
+
+            {/* Roulette Result Card */}
+            {rouletteResult && (
+              <div className="card bg-white border-primary-200 border-2 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-primary-500" />
+                  <h3 className="font-bold text-gray-900 text-sm">今天的随机搭配</h3>
+                </div>
+                <div className="space-y-2 mb-3">
+                  {[
+                    { d: rouletteResult.staple, label: '主食' },
+                    { d: rouletteResult.protein, label: '蛋白质' },
+                    { d: rouletteResult.vegetable, label: '蔬菜' },
+                    ...(rouletteResult.soup ? [{ d: rouletteResult.soup, label: '汤/饮品' }] : []),
+                  ].map(({ d, label }) => (
+                    <div key={d.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${categoryColors[d.category]}`}>
+                          {label}
+                        </span>
+                        <span className="text-sm font-medium text-gray-800">{d.name}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">{d.canteen.replace('中南大学', '')}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mb-3">{rouletteResult.reason}</p>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <span className="font-bold text-lg text-primary-600">¥{rouletteResult.total.toFixed(1)}</span>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {viewMode === 'all' && (

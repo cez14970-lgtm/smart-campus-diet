@@ -27,7 +27,16 @@ const goalOptions = [
 ];
 
 const allergyOptions = ['花生', '鸡蛋', '牛奶', '海鲜', '大豆', '小麦', '坚果'];
-const statusOptions = ['熬夜', '备考', '压力', '运动训练', '生理期', '睡眠不足', '消化不良'];
+const statusOptions = [
+  { key: '熬夜', emoji: '🌙', label: '熬夜/睡眠不足', desc: '入睡晚、睡眠不足、白天疲惫 — 补充B族维生素和优质蛋白' },
+  { key: '备考', emoji: '📚', label: '备考/高强度脑力', desc: '长时间学习、精神高度集中 — 需要稳定血糖和DHA补充' },
+  { key: '压力', emoji: '😰', label: '压力较大', desc: '焦虑紧张、情绪波动 — 避免靠吃发泄情绪，补充镁和维C' },
+  { key: '运动训练', emoji: '🏃', label: '运动训练期', desc: '规律高强度训练 — 需要优质蛋白、碳水补充和电解质' },
+  { key: '生理期', emoji: '🩰', label: '生理期', desc: '身体不适、容易疲劳 — 温补易消化，避免生冷刺激' },
+  { key: '消化不良', emoji: '🤢', label: '消化不良/胃胀', desc: '腹胀、消化缓慢 — 少食多餐，温热软烂为主，避免油腻' },
+  { key: '上火', emoji: '🔥', label: '上火/口腔溃疡', desc: '口干舌燥、长痘、咽喉痛 — 避免辛辣油炸烧烤，多喝水' },
+  { key: '感冒', emoji: '🤧', label: '感冒/身体不适', desc: '喉咙痛、发冷乏力 — 推荐热汤粥面，避免生冷辛辣' },
+];
 const frequencyOptions = [
   { value: 'sedentary', label: '久坐不动' },
   { value: 'light', label: '轻度运动（每周1-2次）' },
@@ -231,21 +240,41 @@ export default function Profile() {
               <span className="w-1.5 h-5 bg-yellow-500 rounded-full" />
               近期状态（多选）
             </h2>
-            <div className="flex flex-wrap gap-2.5">
-              {statusOptions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => toggleArray('recentStatus', s)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    form.recentStatus.includes(s)
-                      ? 'bg-yellow-500 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+            <p className="text-sm text-gray-400 mb-4">告诉我们你最近的身体状况，AI 会帮你避开不合适的食物</p>
+            <div className="space-y-3">
+              {statusOptions.map((s) => {
+                const active = form.recentStatus.includes(s.key);
+                return (
+                  <div
+                    key={s.key}
+                    onClick={() => toggleArray('recentStatus', s.key)}
+                    className={`flex items-center p-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-150 ${
+                      active
+                        ? 'border-primary-400 bg-primary-50/50 shadow-sm'
+                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-3xl mr-4 flex-shrink-0">{s.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-gray-900 block">{s.label}</span>
+                      <span className="text-xs text-gray-400 block mt-0.5 line-clamp-2">{s.desc}</span>
+                    </div>
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-3 transition-all ${
+                        active
+                          ? 'bg-primary-500 border-primary-500 text-white'
+                          : 'border-gray-200'
+                      }`}
+                    >
+                      {active && (
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

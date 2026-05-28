@@ -77,7 +77,7 @@ export default function Recommendation() {
         </div>
 
         {/* BMI & BMR Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'BMI', value: `${advice.bmi}`, sub: advice.bmiCategory, color: 'bg-blue-50 text-blue-700' },
             { label: '基础代谢', value: `${calculateBMR(profile)}`, sub: 'kcal/天', color: 'bg-green-50 text-green-700' },
@@ -91,6 +91,21 @@ export default function Recommendation() {
             </div>
           ))}
         </div>
+
+        {/* Body State Banner */}
+        {profile.recentStatus.length > 0 && !profile.recentStatus.includes('正常') && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">🔍</span>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                当前状态「{profile.recentStatus.join('、')}」已自动调整推荐策略
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                已为你不推荐辛辣、油腻等不适合当前身体状况的菜品，推荐清单已做适配优化。
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           {/* Left: Radar & bar charts */}
